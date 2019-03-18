@@ -1,0 +1,49 @@
+
+File.txt (JSON)
+{
+	"files" : [
+		{ "fileName" : "name1" ,  "fileDescription" : "test file"},
+		{"fileName":"name2",  "fileDescription" : "hello world test"}
+
+	],
+	"user": "clientA"
+}
+
+Init User
+{
+	"MessageType":"init", 
+	"Info" : 
+	               { "user" : "clientA", 
+		"connectionSpeed":"ethernet", 
+		"hostname":"host", 
+		"portNumber":"port " }
+}
+Server Replies
+	{"Result" : "Success/Error"}
+
+
+Send Descriptions File
+{
+	"MessageType":"file", 
+	"Info" :  "contents of file" 
+}
+Server Replies
+	{"Result" : "Success/Error"}
+
+Search Files
+{
+	"MessageType":"search",
+	"searchKey" : "wordToSearch"
+}
+Server Replies (array of maps of search results)
+	[ {"filename" : "fileName",
+                       "hostname": "hostname",
+                        "connectionSpeed":"connectionSpeed"
+                    } ]
+
+User To Send End Connection
+{
+	"MessageType":"exit",
+}
+Server Replies
+	{"Result" : "Success/Error"}

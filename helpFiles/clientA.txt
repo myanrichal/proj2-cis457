@@ -1,0 +1,12 @@
+{
+	"files" : [
+		{ "fileName" : "name1" ,  "fileDescription" : "test file"},
+		{"fileName":"name2",  "fileDescription" : "hello world test"}
+
+	],
+	"user": "clientA"
+
+
+
+
+}
