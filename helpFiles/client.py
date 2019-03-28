@@ -71,41 +71,87 @@ def end():
     tcpClient.close()
 
 
-def getinfo():
-    remote = input("Enter IP address of remote client: ")
-    local = input("Enter IP address of local client: ")
+def getinput():
+    return input("Enter 1 for Search\nEnter 2 for retrieve\nEnter 3 to exit\n")
 
-    return remote, local
+
+# Retrieve a file from the server
+# param - ftp connection
+def retrieve(ftp):
+    filename = input("Enter filename of file to retrieve: ")
+    # create file to store retrieved data in
+    try:
+        localfile = open(filename, 'wb')
+        ftp.retrbinary('RETR '+filename, localfile.write, 1024)
+        localfile.close()
+        print("File Retrieved \n\n")
+    except IOError:
+        print("Failure to retrieve file\n\n")
+    except pyftpdlib.all_errors:
+        print("Error: ftp error \n")
+
+
+# Function to get FTP connection information from user
+# return IP of server and port number
+def welcome():
+    print("Welcome to FTP client app\n")
+    s_name = input("Please enter the server name: ")
+    p_number = input("please enter the port number: ")
+    return s_name, p_number
+
+
+# Create client connection to server
+# Param - IP and port of server
+# return ftp connection
+# To Do: Add try/catch for connection
+def create_client(ip, p):
+    ftp = pyftpdlib.FTP('')
+    ftp.connect(ip, int(p))
+    ftp.login()
+
+    return ftp
 
 
 if __name__ == "__main__":
+    # initialize things that are important
     threading.Thread(target=threaded_local_server, args=[]).start()
-    print("Thread started")
-
-    remote_ip, local_ip = getinfo()
+    print("Thread for local server started")
 
     authorizer = DummyAuthorizer()
     authorizer.add_user("user", "12345", "C:/Users/chadm/Desktop/ftp", perm="elradfmw")
     authorizer.add_anonymous("C:/Users/chadm/Desktop/ftp", perm="elradfmw")
 
-    host = local_ip
-    port = 8021
+    host = socket.gethostname()
+    port = 2004
     BUFFER_SIZE = 2000
 
     tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcpClient.connect((host, port))
 
-    init_message()
-    time.sleep(2)
-    send_file()
     time.sleep(1)
-    search_file("hello")
-    time.sleep(2)
-    search_file("test")
-    time.sleep(3)
-    search_file("nothing")
-    time.sleep(3)
+
+    init_message()
+    send_file()
+
+    userInput = getinput()
+    while userInput != '3':
+        if userInput == '1':
+            search_file(input("\tEnter filename: "))
+
+        elif userInput == '2':
+            # implement ftp client to retrieve from other chadster client
+
+            ftp_connection = None
+            while ftp_connection is None:
+                server_name, port_number = welcome()
+                try:
+                    ftp_connection = create_client(server_name, port_number)
+                except pyftpdlib.all_errors:
+                    print("Could not connect to server, try again\n")
+                    ftp_connection = None
+
+            retrieve(ftp_connection)
+
+        userInput = getinput()
 
     end()
-
-

@@ -133,7 +133,7 @@ class ThreadedServer(object):
 
 
 # Multithreaded Python server : TCP Server Socket Program
-TCP_IP = '127.0.0.1'
+TCP_IP = '0.0.0.0'
 TCP_PORT = 2004
 
 # store user information
