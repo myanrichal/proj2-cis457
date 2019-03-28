@@ -94,7 +94,8 @@ class ThreadedServer(object):
                                 if user_name == users["user"]:
                                     keep = {"filename": file["fileName"],
                                             "hostname": users["hostname"],
-                                            "connectionSpeed": users["connectionSpeed"]
+                                            "connectionSpeed": users["connectionSpeed"],
+                                            "portNumber":users["portNumber"]
                                             }
                                     matching_files.append(keep)
                     # array of dictionaries for matching file, [] if no match
@@ -133,8 +134,8 @@ class ThreadedServer(object):
 
 
 # Multithreaded Python server : TCP Server Socket Program
-TCP_IP = '0.0.0.0'
-TCP_PORT = 2004
+TCP_IP = '127.0.0.1'
+TCP_PORT = 2019
 
 # store user information
 users_list = []

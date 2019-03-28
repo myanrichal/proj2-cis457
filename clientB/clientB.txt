@@ -1,0 +1,8 @@
+{
+	"files" : [
+		{ "fileName" : "name3.txt" ,  "fileDescription" : "test file client B"},
+		{"fileName" : "name4.txt",  "fileDescription" : "no content"}
+
+	],
+	"user": "clientB"
+}

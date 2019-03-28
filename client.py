@@ -13,7 +13,7 @@ from pyftpdlib.servers import FTPServer
 def threaded_local_server():
     handler = FTPHandler
     handler.authorizer = pyftpdlib.authorizers.DummyAuthorizer
-    server = FTPServer(("127.0.0.1", 8021), handler)
+    server = FTPServer((hostname, portU), handler)
     server.serve_forever()
     print("Will this ever print?")
 
@@ -22,10 +22,10 @@ def init_message():
     message = {
         "MessageType": "init",
         "Info":
-            {"user": "clientA",
-             "connectionSpeed": "ethernet",
-             "hostname": "host",
-             "portNumber": "port"}
+            {"user": user,
+             "connectionSpeed": connection,
+             "hostname": hostname,
+             "portNumber": portU}
     }
     tcpClient.send(json.dumps(message).encode('utf-8'))
     data_p = tcpClient.recv(BUFFER_SIZE)
@@ -42,15 +42,16 @@ def search_file(search_key):
     data_p = tcpClient.recv(BUFFER_SIZE)
     data = json.loads(data_p.decode('utf-8'))
     print(data)
+    return data
 
 
 def send_file():
     message = {
         "MessageType": "file",
-        "fileName": "clientA.txt",
+        "fileName": filename,
         "Info": "contents of file"
     }
-    f = open("clientA.txt", 'r')
+    f = open(filename, 'r')
     loader = f.read(1024)
     message["Info"] = loader
     tcpClient.send(json.dumps(message).encode('utf-8'))
@@ -62,7 +63,7 @@ def send_file():
 def end():
     message = {
         "MessageType": "exit",
-        "user": "clientA"
+        "user": user
         }
     tcpClient.send(json.dumps(message).encode('utf-8'))
     data_p = tcpClient.recv(BUFFER_SIZE)
@@ -113,44 +114,85 @@ def create_client(ip, p):
 
 
 if __name__ == "__main__":
+
+    fileMatches=[]
+    response = input("Are you client A or B?")
+    if response.upper() == "A":
+        print("Welcome client A\n")
+        client = 1
+        hostname = "127.0.0.13"
+        portU = 8021
+        user = "clientA"
+        connection = "ethernet"
+        filename = "clientA.txt"
+    else:
+        print("Welcome client B\n")
+        client = 2
+        hostname = "127.0.0.12"
+        portU = 7021
+        user = "clientA"
+        connection="T1"
+        filename="clientB.txt"
+
+
+
     # initialize things that are important
     threading.Thread(target=threaded_local_server, args=[]).start()
     print("Thread for local server started")
 
     authorizer = DummyAuthorizer()
-    authorizer.add_user("user", "12345", "C:/Users/chadm/Desktop/ftp", perm="elradfmw")
-    authorizer.add_anonymous("C:/Users/chadm/Desktop/ftp", perm="elradfmw")
+    if user == "clientA":
+        authorizer.add_user("user", "12345", "C:/Users/JD/Desktop/CIS457/proj2-cis457/clientA", perm="elradfmw")
+        authorizer.add_anonymous("C:/Users/JD/Desktop/CIS457/proj2-cis457/clientA", perm="elradfmw")
 
-    host = socket.gethostname()
-    port = 2004
+    else:
+        authorizer.add_user("user", "12345", "C:/Users/JD/Desktop/CIS457/proj2-cis457/clientB", perm="elradfmw")
+        authorizer.add_anonymous("C:/Users/JD/Desktop/CIS457/proj2-cis457/clientB", perm="elradfmw")
+
+    host_centralServer = "127.0.0.1"
+    port_centralServer = 2019
     BUFFER_SIZE = 2000
 
+    print("Trying to connect to central server..\n")
     tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcpClient.connect((host, port))
+    tcpClient.connect((host_centralServer, port_centralServer))
 
     time.sleep(1)
 
     init_message()
     send_file()
-
     userInput = getinput()
     while userInput != '3':
+        correctMap = None
+
         if userInput == '1':
-            search_file(input("\tEnter filename: "))
+            fileMatches=search_file(input("\tEnter filename to search for: "))
 
         elif userInput == '2':
             # implement ftp client to retrieve from other chadster client
+            r_filename=input("Which filename would you like to get?")
 
-            ftp_connection = None
-            while ftp_connection is None:
-                server_name, port_number = welcome()
+            for i in range(len(fileMatches)):
+                print(fileMatches)
+                match=fileMatches[i]
+                if r_filename == match["fileName"]:
+                    correctMap = match
+            if correctMap is None:
+                print("File name not found, try search function again")
+            else:
+                m_fileName=correctMap["fileName"]
+                m_hostname = correctMap["hostname"]
+                m_port = correctMap["port"]
+
+                ftp_connection = None
                 try:
-                    ftp_connection = create_client(server_name, port_number)
+                    ftp_connection = create_client(m_hostname, m_port)
+                    retrieve(m_fileName)
+                    ftp_connection.quit()
+
                 except pyftpdlib.all_errors:
                     print("Could not connect to server, try again\n")
                     ftp_connection = None
-
-            retrieve(ftp_connection)
 
         userInput = getinput()
 
