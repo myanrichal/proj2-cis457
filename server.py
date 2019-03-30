@@ -34,8 +34,6 @@ class ThreadedServer(object):
             except socket.error:
                 print("Error: could not connect to client")
 
-
-    # thread to deal with client communication
     def listenToClient(self, client, address):
         while True:
             try:
@@ -96,7 +94,7 @@ class ThreadedServer(object):
                                     keep = {"filename": file["fileName"],
                                             "hostname": users["hostname"],
                                             "connectionSpeed": users["connectionSpeed"],
-                                            "portNumber":users["portNumber"]
+                                            "portNumber": users["portNumber"]
                                             }
                                     matching_files.append(keep)
                     # array of dictionaries for matching file, [] if no match

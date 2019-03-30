@@ -3,8 +3,8 @@ import json
 import socket
 import time
 import threading
+import ftplib
 
-import pyftpdlib.authorizers
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import FTPServer
@@ -12,7 +12,7 @@ from pyftpdlib.servers import FTPServer
 
 def threaded_local_server():
     handler = FTPHandler
-    handler.authorizer = pyftpdlib.authorizers.DummyAuthorizer
+    handler.authorizer = authorizer
     server = FTPServer((hostname, portU), handler)
     print("Thread for local server starting...")
     server.serve_forever()
@@ -30,7 +30,6 @@ def init_message():
     }
     tcpClient.send(json.dumps(message).encode('utf-8'))
     data_p = tcpClient.recv(BUFFER_SIZE)
-    print(data_p)
     data = json.loads(data_p.decode('utf-8'))
     print(data)
 
@@ -42,7 +41,6 @@ def search_file(search_key):
             }
     tcpClient.send(json.dumps(message).encode('utf-8'))
     data_p = tcpClient.recv(BUFFER_SIZE)
-    print(data_p)
     data = json.loads(data_p.decode('utf-8'))
     print(data)
     return data
@@ -73,6 +71,7 @@ def end():
     data = json.loads(data_p.decode('utf-8'))
     print(data)
     tcpClient.close()
+    threading.Thread(target=threaded_local_server, args=[]).join()
 
 
 def getinput():
@@ -81,17 +80,15 @@ def getinput():
 
 # Retrieve a file from the server
 # param - ftp connection
-def retrieve(ftp):
-    fn = input("Enter filename of file to retrieve: ")
-    # create file to store retrieved data in
+def retrieve(ftp, name):
     try:
-        localfile = open(fn, 'wb')
-        ftp.retrbinary('RETR '+fn, localfile.write, 1024)
+        localfile = open(name, 'wb')
+        ftp.retrbinary('RETR '+name, localfile.write, 1024)
         localfile.close()
         print("File Retrieved \n\n")
     except IOError:
         print("Failure to retrieve file\n\n")
-    except pyftpdlib.all_errors:
+    except ftplib.all_errors:
         print("Error: ftp error \n")
 
 
@@ -109,7 +106,7 @@ def welcome():
 # return ftp connection
 # To Do: Add try/catch for connection
 def create_client(ip, p):
-    ftp = pyftpdlib.FTP('')
+    ftp = ftplib.FTP('')
     ftp.connect(ip, int(p))
     ftp.login()
     return ftp
@@ -117,6 +114,7 @@ def create_client(ip, p):
 
 if __name__ == "__main__":
 
+    authorizer = DummyAuthorizer()
     fileMatches = []
 
     response = input("Are you client A or B?")
@@ -137,10 +135,9 @@ if __name__ == "__main__":
         connection = "T1"
         filename = "clientB.txt"
 
-# start the thread for the local ftp server to transmit files
+    # start the thread for the local ftp server to transmit files
     threading.Thread(target=threaded_local_server, args=[]).start()
 
-    authorizer = DummyAuthorizer()
     if user == "clientA":
         authorizer.add_user("user", "12345", "C:/Users/chadm/Desktop/CIS457/proj2-cis457/clientA", perm="elradfmw")
         authorizer.add_anonymous("C:/Users/chadm/Desktop/CIS457/proj2-cis457/clientA", perm="elradfmw")
@@ -175,26 +172,26 @@ if __name__ == "__main__":
             for i in range(len(fileMatches)):
                 print(fileMatches)
                 match = fileMatches[i]
-                if r_filename == match["fileName"]:
+                if r_filename == match["filename"]:
                     correctMap = match
             if correctMap is None:
                 print("File name not found, try search function again")
             else:
-                m_fileName = correctMap["fileName"]
+                m_fileName = correctMap["filename"]
                 m_hostname = correctMap["hostname"]
-                m_port = correctMap["port"]
+                m_port = correctMap["portNumber"]
 
                 ftp_connection = None
                 try:
                     ftp_connection = create_client(m_hostname, m_port)
-                    retrieve(m_fileName)
+                    retrieve(ftp_connection, r_filename)
                     ftp_connection.quit()
 
-                except pyftpdlib.all_errors:
+                except ftplib.all_errors:
                     print("Could not connect to server, try again\n")
                     ftp_connection = None
 
-        fileMatches = []
+        # fileMatches = []
         userInput = getinput()
 
     end()
