@@ -1,5 +1,6 @@
 from tkinter import *
 
+
 class Chadster:
     def __init__(self, master):
         self.master = master

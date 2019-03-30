@@ -34,6 +34,7 @@ class ThreadedServer(object):
             except socket.error:
                 print("Error: could not connect to client")
 
+
     # thread to deal with client communication
     def listenToClient(self, client, address):
         while True:
