@@ -131,7 +131,7 @@ if __name__ == "__main__":
         client = 2
         hostname = "127.0.0.3"
         portU = 7021
-        user = "clientA"
+        user = "clientB"
         connection = "T1"
         filename = "clientB.txt"
 

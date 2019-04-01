@@ -1,7 +1,7 @@
 {
 	"files" : [
-		{ "fileName" : "name1.txt" ,  "fileDescription" : "test file"},
-		{"fileName" : "name2.txt",  "fileDescription" : "hello world test"}
+		{ "fileName" : "name1.txt" ,  "fileDescription" : "test file client A"},
+		{"fileName" : "name2.txt",  "fileDescription" : "hello world"}
 
 	],
 	"user": "clientA"
