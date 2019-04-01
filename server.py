@@ -3,45 +3,28 @@
 # Program to create a multi-threaded TCP server
 # Server will accept multiple clients and listens for certain messages to search for files
 
+from threading import Thread
 import socket
-import threading
 import json
 import ast
 
 
 # Multithreaded Python server
-class ThreadedServer(object):
+class ThreadedServer(Thread):
 
     # set up server
-    def __init__(self, ip, port):
+    def __init__(self,conn, ip, port):
+        Thread.__init__(self)
         self.ip = ip
         self.port = port
-        self.tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcpServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.tcpServer.bind((self.ip, self.port))
+        self.conn = conn
+        print("[+] New server socket thread started for " + ip + ":" + str(port))
 
-    # listen for clients
-    def listen(self):
-        self.tcpServer.listen(5)
-        while True:
-            try:
-                client, address = self.tcpServer.accept()
-                print("[+] New server socket thread started for :" + str(address))
+    def run(self):
+        threadAlive=True
+        while threadAlive:
+            data_packed = self.conn.recv(2048)
 
-                client.settimeout(60)
-                # add each client to new thread
-                threading.Thread(target=self.listenToClient, args=(client, address)).start()
-            except socket.error:
-                print("Error: could not connect to client")
-
-    def listenToClient(self, client, address):
-        while True:
-            try:
-                data_packed = client.recv(2048)
-            except socket.error:
-                print("Error, could not receive from client: ", address)
-                client.close()
-                return
             # look for valid return message
             if data_packed != b'':
                 try:
@@ -78,6 +61,7 @@ class ThreadedServer(object):
                     print("Update File List: ", file_list)
                 # search for word in file descriptions
                 elif "search" == data["MessageType"]:
+                    print("attempting search..")
                     search_word = data["searchKey"]
                     matching_files = []
                     # loop through files
@@ -102,6 +86,7 @@ class ThreadedServer(object):
 
                 # client wants to disconnect
                 elif "exit" == data["MessageType"]:
+                    print("Exiting thread..")
                     remove_user = data["user"]
                     count = 0
                     # remove from file information
@@ -114,31 +99,52 @@ class ThreadedServer(object):
                         else:
                             count = count + 1
                     # remove from user list
-                    for i in range(len(users_list)):
-                        use = users_list[i]
+                    print(len(users_list))
+                    counter=0
+                    while counter < len(users_list):
+                        use = users_list[counter]
                         if remove_user == use["user"]:
-                            del users_list[i]
+                            del users_list[counter]
+                            counter =0
+                        else:
+                            counter =counter+1
+
                     print("Update File List: ", file_list)
                     print("Update User List: ", users_list)
                     return_message = {"Result": "Success"}
+                    threadAlive=False
 
                 else:
                     return_message = {"Result": "Error"}
                 # send response
                 try:
-                    client.send(json.dumps(return_message).encode('utf-8'))
+                    print("Sending to ",self.ip, ":", self.port," --", return_message)
+                    self.conn.send(json.dumps(return_message).encode('utf-8'))
                 except ValueError:
                     print("Error: Can't send response..")
-                    client.send(json.dumps({"Result": "Error"}).encode('utf-8'))
+                    self.conn.send(json.dumps({"Result": "Error"}).encode('utf-8'))
 
 
 # Multithreaded Python server : TCP Server Socket Program
 TCP_IP = '127.0.0.1'
 TCP_PORT = 2019
 
+tcpServer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+tcpServer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+tcpServer.bind((TCP_IP, TCP_PORT))
+threads=[]
+
+
 # store user information
 users_list = []
 # store file information
 file_list = []
-ThreadedServer('', TCP_PORT).listen()
+
+while True:
+    tcpServer.listen(4)
+    print("Multithreaded Python server : Waiting for connections from TCP clients...")
+    (conn, (ip,port)) = tcpServer.accept()
+    newthread = ThreadedServer(conn,ip, port)
+    newthread.start()
+    threads.append(newthread)
 
